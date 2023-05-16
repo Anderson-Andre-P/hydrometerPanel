@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:page_transition/page_transition.dart';
 import '../flutter_flow_theme.dart';
@@ -43,7 +42,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                 ),
               ),
             )
-          : LoginWidget(),
+          : NavBarPage(),
       routes: [
         FFRoute(
           name: '_initialize',
@@ -61,14 +60,16 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                     ),
                   ),
                 )
-              : LoginWidget(),
+              : NavBarPage(),
           routes: [
             FFRoute(
               name: 'Home',
               path: 'home',
               builder: (context, params) => params.isEmpty
                   ? NavBarPage(initialPage: 'Home')
-                  : HomeWidget(),
+                  : HomeWidget(
+                      aa: params.getParam('aa', ParamType.String),
+                    ),
             ),
             FFRoute(
               name: 'Configuracoes',
@@ -85,6 +86,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                 passwordFilled:
                     params.getParam('passwordFilled', ParamType.bool),
               ),
+            ),
+            FFRoute(
+              name: 'calendar',
+              path: 'calendar',
+              builder: (context, params) => CalendarWidget(),
             )
           ].map((r) => r.toRoute(appStateNotifier)).toList(),
         ),

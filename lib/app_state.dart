@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'backend/api_requests/api_manager.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:csv/csv.dart';
+import 'package:synchronized/synchronized.dart';
 import 'flutter_flow/flutter_flow_util.dart';
 
 class FFAppState extends ChangeNotifier {
@@ -11,9 +12,7 @@ class FFAppState extends ChangeNotifier {
     return _instance;
   }
 
-  FFAppState._internal() {
-    initializePersistedState();
-  }
+  FFAppState._internal();
 
   Future initializePersistedState() async {
     secureStorage = FlutterSecureStorage();
@@ -27,6 +26,11 @@ class FFAppState extends ChangeNotifier {
         _deviceCustomerId;
     _startTs = await secureStorage.getString('ff_startTs') ?? _startTs;
     _endTs = await secureStorage.getString('ff_endTs') ?? _endTs;
+    _lastValueHydrometer =
+        await secureStorage.getString('ff_lastValueHydrometer') ??
+            _lastValueHydrometer;
+    _email = await secureStorage.getString('ff_email') ?? _email;
+    _password = await secureStorage.getString('ff_password') ?? _password;
   }
 
   void update(VoidCallback callback) {
@@ -103,7 +107,7 @@ class FFAppState extends ChangeNotifier {
     secureStorage.delete(key: 'ff_deviceCustomerId');
   }
 
-  String _startTs = '1646092800000';
+  String _startTs = '';
   String get startTs => _startTs;
   set startTs(String _value) {
     _startTs = _value;
@@ -114,7 +118,7 @@ class FFAppState extends ChangeNotifier {
     secureStorage.delete(key: 'ff_startTs');
   }
 
-  String _endTs = '1680307200000';
+  String _endTs = '';
   String get endTs => _endTs;
   set endTs(String _value) {
     _endTs = _value;
@@ -125,10 +129,79 @@ class FFAppState extends ChangeNotifier {
     secureStorage.delete(key: 'ff_endTs');
   }
 
-  bool _debugComponent = false;
-  bool get debugComponent => _debugComponent;
-  set debugComponent(bool _value) {
-    _debugComponent = _value;
+  String _lastValueHydrometer = '';
+  String get lastValueHydrometer => _lastValueHydrometer;
+  set lastValueHydrometer(String _value) {
+    _lastValueHydrometer = _value;
+    secureStorage.setString('ff_lastValueHydrometer', _value);
+  }
+
+  void deleteLastValueHydrometer() {
+    secureStorage.delete(key: 'ff_lastValueHydrometer');
+  }
+
+  String _email = '';
+  String get email => _email;
+  set email(String _value) {
+    _email = _value;
+    secureStorage.setString('ff_email', _value);
+  }
+
+  void deleteEmail() {
+    secureStorage.delete(key: 'ff_email');
+  }
+
+  String _password = '';
+  String get password => _password;
+  set password(String _value) {
+    _password = _value;
+    secureStorage.setString('ff_password', _value);
+  }
+
+  void deletePassword() {
+    secureStorage.delete(key: 'ff_password');
+  }
+
+  bool _apiLoaded = false;
+  bool get apiLoaded => _apiLoaded;
+  set apiLoaded(bool _value) {
+    _apiLoaded = _value;
+  }
+
+  List<DateTime> _datePicked = [];
+  List<DateTime> get datePicked => _datePicked;
+  set datePicked(List<DateTime> _value) {
+    _datePicked = _value;
+  }
+
+  void addToDatePicked(DateTime _value) {
+    _datePicked.add(_value);
+  }
+
+  void removeFromDatePicked(DateTime _value) {
+    _datePicked.remove(_value);
+  }
+
+  void removeAtIndexFromDatePicked(int _index) {
+    _datePicked.removeAt(_index);
+  }
+
+  String _datePickedString = 'sem data';
+  String get datePickedString => _datePickedString;
+  set datePickedString(String _value) {
+    _datePickedString = _value;
+  }
+
+  int _activeTab = 0;
+  int get activeTab => _activeTab;
+  set activeTab(int _value) {
+    _activeTab = _value;
+  }
+
+  bool _userWantToLeave = false;
+  bool get userWantToLeave => _userWantToLeave;
+  set userWantToLeave(bool _value) {
+    _userWantToLeave = _value;
   }
 }
 
@@ -143,25 +216,32 @@ LatLng? _latLngFromString(String? val) {
 }
 
 extension FlutterSecureStorageExtensions on FlutterSecureStorage {
+  static final _lock = Lock();
+
+  Future<void> writeSync({required String key, String? value}) async =>
+      await _lock.synchronized(() async {
+        await write(key: key, value: value);
+      });
+
   void remove(String key) => delete(key: key);
 
   Future<String?> getString(String key) async => await read(key: key);
   Future<void> setString(String key, String value) async =>
-      await write(key: key, value: value);
+      await writeSync(key: key, value: value);
 
   Future<bool?> getBool(String key) async => (await read(key: key)) == 'true';
   Future<void> setBool(String key, bool value) async =>
-      await write(key: key, value: value.toString());
+      await writeSync(key: key, value: value.toString());
 
   Future<int?> getInt(String key) async =>
       int.tryParse(await read(key: key) ?? '');
   Future<void> setInt(String key, int value) async =>
-      await write(key: key, value: value.toString());
+      await writeSync(key: key, value: value.toString());
 
   Future<double?> getDouble(String key) async =>
       double.tryParse(await read(key: key) ?? '');
   Future<void> setDouble(String key, double value) async =>
-      await write(key: key, value: value.toString());
+      await writeSync(key: key, value: value.toString());
 
   Future<List<String>?> getStringList(String key) async =>
       await read(key: key).then((result) {
@@ -175,5 +255,5 @@ extension FlutterSecureStorageExtensions on FlutterSecureStorage {
             .toList();
       });
   Future<void> setStringList(String key, List<String> value) async =>
-      await write(key: key, value: ListToCsvConverter().convert([value]));
+      await writeSync(key: key, value: ListToCsvConverter().convert([value]));
 }

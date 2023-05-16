@@ -1,10 +1,13 @@
+import '/backend/api_requests/api_calls.dart';
 import '/components/input_email/input_email_widget.dart';
 import '/components/input_password/input_password_widget.dart';
+import '/flutter_flow/flutter_flow_animations.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +19,8 @@ class LoginModel extends FlutterFlowModel {
   late InputEmailModel inputEmailModel;
   // Model for Input_Password component.
   late InputPasswordModel inputPasswordModel;
+  // Stores action output result for [Backend Call - API (postLoginEndpoint)] action in ButtonLogin widget.
+  ApiCallResponse? postLoginEndpointResponse;
 
   /// Initialization and disposal methods.
 

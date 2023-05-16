@@ -43,8 +43,7 @@
 	<true/>
 
 
-	<key>PermissionGroupNotification</key>
-    <string>Precisamos de sua permisao para te enviar notificacoes</string>
+
 
 
 	<key>UILaunchStoryboardName</key>

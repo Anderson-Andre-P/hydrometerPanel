@@ -9,62 +9,21 @@ export 'api_manager.dart' show ApiCallResponse;
 
 const _kPrivateApiFunctionName = 'ffPrivateApiCall';
 
-/// Start telemetryHidrometro Group Code
+/// Start hydrometerAPIEndpoints Group Code
 
-class TelemetryHidrometroGroup {
+class HydrometerAPIEndpointsGroup {
   static String baseUrl = 'https://monitordeenergia.ml/api';
-  static Map<String, String> headers = {
-    'Content-Type': 'application/json',
-    'X-Authorization': 'Bearer [token]',
-  };
-  static AuthUserCall authUserCall = AuthUserCall();
-  static UserLoginCall userLoginCall = UserLoginCall();
-  static ConsumptionCall consumptionCall = ConsumptionCall();
-  static DevicesInfosCall devicesInfosCall = DevicesInfosCall();
+  static Map<String, String> headers = {};
+  static PostLoginEndpointCall postLoginEndpointCall = PostLoginEndpointCall();
+  static GetTimeSeriesDataCall getTimeSeriesDataCall = GetTimeSeriesDataCall();
+  static GetCurrentUserCall getCurrentUserCall = GetCurrentUserCall();
+  static PostLogoutCall postLogoutCall = PostLogoutCall();
+  static GetCustomerDeviceInfoCall getCustomerDeviceInfoCall =
+      GetCustomerDeviceInfoCall();
+  static PostRefreshTokenCall postRefreshTokenCall = PostRefreshTokenCall();
 }
 
-class AuthUserCall {
-  Future<ApiCallResponse> call({
-    String? token = '',
-  }) {
-    return ApiManager.instance.makeApiCall(
-      callName: 'authUser',
-      apiUrl: '${TelemetryHidrometroGroup.baseUrl}/auth/user',
-      callType: ApiCallType.GET,
-      headers: {
-        ...TelemetryHidrometroGroup.headers,
-      },
-      params: {},
-      returnBody: true,
-      encodeBodyUtf8: false,
-      decodeUtf8: false,
-      cache: false,
-    );
-  }
-
-  dynamic email(dynamic response) => getJsonField(
-        response,
-        r'''$.email''',
-      );
-  dynamic firstName(dynamic response) => getJsonField(
-        response,
-        r'''$.firstName''',
-      );
-  dynamic lastName(dynamic response) => getJsonField(
-        response,
-        r'''$.lastName''',
-      );
-  dynamic name(dynamic response) => getJsonField(
-        response,
-        r'''$.name''',
-      );
-  dynamic customerId(dynamic response) => getJsonField(
-        response,
-        r'''$.customerId.id''',
-      );
-}
-
-class UserLoginCall {
+class PostLoginEndpointCall {
   Future<ApiCallResponse> call({
     String? email = '',
     String? password = '',
@@ -75,11 +34,11 @@ class UserLoginCall {
   "password": "${password}"
 }''';
     return ApiManager.instance.makeApiCall(
-      callName: 'userLogin',
-      apiUrl: '${TelemetryHidrometroGroup.baseUrl}/auth/login',
+      callName: 'postLoginEndpoint',
+      apiUrl: '${HydrometerAPIEndpointsGroup.baseUrl}/auth/login',
       callType: ApiCallType.POST,
       headers: {
-        ...TelemetryHidrometroGroup.headers,
+        ...HydrometerAPIEndpointsGroup.headers,
       },
       params: {},
       body: body,
@@ -101,20 +60,22 @@ class UserLoginCall {
       );
 }
 
-class ConsumptionCall {
+class GetTimeSeriesDataCall {
   Future<ApiCallResponse> call({
-    String? deviceCustomerId = '',
+    String? entityId = '',
+    String? keys = '',
     String? startTs = '',
     String? endTs = '',
     String? token = '',
   }) {
     return ApiManager.instance.makeApiCall(
-      callName: 'consumption',
+      callName: 'getTimeSeriesData',
       apiUrl:
-          '${TelemetryHidrometroGroup.baseUrl}/plugins/telemetry/DEVICE/${deviceCustomerId}/values/timeseries?keys=hidrometro&startTs=${startTs}&endTs=${endTs}&limit=1&orderBy=ASC',
+          '${HydrometerAPIEndpointsGroup.baseUrl}/plugins/telemetry/DEVICE/${entityId}/values/timeseries?keys=${keys}&startTs=${startTs}&endTs=${endTs}&orderBy=DESC',
       callType: ApiCallType.GET,
       headers: {
-        ...TelemetryHidrometroGroup.headers,
+        ...HydrometerAPIEndpointsGroup.headers,
+        'X-Authorization': 'Bearer ${token}',
       },
       params: {},
       returnBody: true,
@@ -124,25 +85,100 @@ class ConsumptionCall {
     );
   }
 
-  dynamic hidrometroValue(dynamic response) => getJsonField(
+  dynamic hidrometroValues(dynamic response) => getJsonField(
         response,
         r'''$.hidrometro[:].value''',
         true,
       );
+  dynamic hidrometroLastValue(dynamic response) => getJsonField(
+        response,
+        r'''$.hidrometro[1].value''',
+        true,
+      );
+  dynamic hidrometroFirstValue(dynamic response) => getJsonField(
+        response,
+        r'''$.hidrometro[-1].value''',
+        true,
+      );
 }
 
-class DevicesInfosCall {
+class GetCurrentUserCall {
+  Future<ApiCallResponse> call({
+    String? token = '',
+  }) {
+    return ApiManager.instance.makeApiCall(
+      callName: 'getCurrentUser',
+      apiUrl: '${HydrometerAPIEndpointsGroup.baseUrl}/auth/user',
+      callType: ApiCallType.GET,
+      headers: {
+        ...HydrometerAPIEndpointsGroup.headers,
+        'X-Authorization': 'Bearer ${token}',
+      },
+      params: {},
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+    );
+  }
+
+  dynamic customerId(dynamic response) => getJsonField(
+        response,
+        r'''$.customerId.id''',
+      );
+  dynamic name(dynamic response) => getJsonField(
+        response,
+        r'''$.name''',
+      );
+  dynamic email(dynamic response) => getJsonField(
+        response,
+        r'''$.email''',
+      );
+  dynamic firstName(dynamic response) => getJsonField(
+        response,
+        r'''$.firstName''',
+      );
+  dynamic entityIdOfTypeUser(dynamic response) => getJsonField(
+        response,
+        r'''$.id.id''',
+      );
+}
+
+class PostLogoutCall {
+  Future<ApiCallResponse> call({
+    String? token = '',
+  }) {
+    return ApiManager.instance.makeApiCall(
+      callName: 'postLogout',
+      apiUrl: '${HydrometerAPIEndpointsGroup.baseUrl}/auth/logout',
+      callType: ApiCallType.POST,
+      headers: {
+        ...HydrometerAPIEndpointsGroup.headers,
+        'X-Authorization': 'Bearer ${token}',
+      },
+      params: {},
+      bodyType: BodyType.JSON,
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+    );
+  }
+}
+
+class GetCustomerDeviceInfoCall {
   Future<ApiCallResponse> call({
     String? customerId = '',
     String? token = '',
   }) {
     return ApiManager.instance.makeApiCall(
-      callName: 'devicesInfos',
+      callName: 'getCustomerDeviceInfo',
       apiUrl:
-          '${TelemetryHidrometroGroup.baseUrl}/customer/${customerId}/deviceInfos?pageSize=1&page=1',
+          '${HydrometerAPIEndpointsGroup.baseUrl}/customer/${customerId}/deviceInfos?pageSize=1&page=1',
       callType: ApiCallType.GET,
       headers: {
-        ...TelemetryHidrometroGroup.headers,
+        ...HydrometerAPIEndpointsGroup.headers,
+        'X-Authorization': 'Bearer ${token}',
       },
       params: {},
       returnBody: true,
@@ -152,27 +188,29 @@ class DevicesInfosCall {
     );
   }
 
-  dynamic dataidid(dynamic response) => getJsonField(
+  dynamic entityTypeOfDeviceByCustomerId(dynamic response) => getJsonField(
         response,
         r'''$.data[:].id.id''',
-        true,
       );
 }
 
-/// End telemetryHidrometro Group Code
-
-class LoginCall {
-  static Future<ApiCallResponse> call({
-    String? email = '',
-    String? password = '',
+class PostRefreshTokenCall {
+  Future<ApiCallResponse> call({
+    String? refreshToken = '',
   }) {
     final body = '''
-{"username":"${email}", "password":"${password}"}''';
+{
+  "refreshToken": "${refreshToken}"
+}''';
     return ApiManager.instance.makeApiCall(
-      callName: 'login',
-      apiUrl: 'https://monitordeenergia.ml/api/auth/login',
+      callName: 'postRefreshToken',
+      apiUrl: '${HydrometerAPIEndpointsGroup.baseUrl}/auth/token',
       callType: ApiCallType.POST,
-      headers: {},
+      headers: {
+        ...HydrometerAPIEndpointsGroup.headers,
+        'Content-Type': 'application/json',
+        'X-Authorization': 'Bearer token',
+      },
       params: {},
       body: body,
       bodyType: BodyType.JSON,
@@ -182,77 +220,9 @@ class LoginCall {
       cache: false,
     );
   }
-
-  static dynamic token(dynamic response) => getJsonField(
-        response,
-        r'''$.token''',
-      );
-  static dynamic customerId(dynamic response) => getJsonField(
-        response,
-        r'''$.customerid''',
-      );
-  static dynamic customeridID(dynamic response) => getJsonField(
-        response,
-        r'''$.customerid[:].id''',
-      );
 }
 
-class UserCall {
-  static Future<ApiCallResponse> call({
-    String? token = '',
-  }) {
-    return ApiManager.instance.makeApiCall(
-      callName: 'user',
-      apiUrl: 'https://monitordeenergia.ml/api/auth/user',
-      callType: ApiCallType.GET,
-      headers: {
-        'X-Authorization': 'Bearer ${token}',
-      },
-      params: {
-        'token': token,
-      },
-      returnBody: true,
-      encodeBodyUtf8: false,
-      decodeUtf8: false,
-      cache: false,
-    );
-  }
-
-  static dynamic firstName(dynamic response) => getJsonField(
-        response,
-        r'''$.firstName''',
-      );
-  static dynamic name(dynamic response) => getJsonField(
-        response,
-        r'''$.name''',
-      );
-}
-
-class ConsumptionTesteCall {
-  static Future<ApiCallResponse> call({
-    String? token = '',
-  }) {
-    return ApiManager.instance.makeApiCall(
-      callName: 'consumptionTeste',
-      apiUrl:
-          'https://monitordeenergia.ml/api/plugins/telemetry/DEVICE/672353b0-7508-11ed-bea8-6b625260d548/values/timeseries?keys=hidrometro&startTs=1646092800000&endTs=1680307200000&limit=1&orderBy=ASC',
-      callType: ApiCallType.GET,
-      headers: {
-        'X-Authorization': 'Bearer ${token}',
-      },
-      params: {},
-      returnBody: true,
-      encodeBodyUtf8: false,
-      decodeUtf8: false,
-      cache: false,
-    );
-  }
-
-  static dynamic hidroValue(dynamic response) => getJsonField(
-        response,
-        r'''$.hidrometro[0].value''',
-      );
-}
+/// End hydrometerAPIEndpoints Group Code
 
 class ApiPagingParams {
   int nextPageNumber = 0;

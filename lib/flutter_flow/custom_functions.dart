@@ -98,3 +98,37 @@ String? somah1h2h3(
     return null;
   }
 }
+
+DateTime? firstConsumptionMeasurement() {
+  const int TIMESTAMP_OF_THE_FIRST_CONSUMPTION_MEASUREMENT = 1671220584672;
+  final DateTime dateOfFirstConsumptionMeasurement =
+      DateTime.fromMillisecondsSinceEpoch(
+          TIMESTAMP_OF_THE_FIRST_CONSUMPTION_MEASUREMENT);
+  return dateOfFirstConsumptionMeasurement;
+}
+
+DateTime? currentDay() {
+  DateTime today = DateTime.now();
+  DateTime currentDate = DateTime(today.year, today.month, today.day);
+  return currentDate;
+}
+
+DateTime? calculateTimestampFromFiftenDaysAgo() {
+  const int FIFTEEN_DAYS_IN_MILLISECONDS = 1296000000;
+  final DateTime currentDate = DateTime.now();
+  final int currentTimestamp = currentDate.millisecondsSinceEpoch;
+  final int fifteenDaysAgoInMilliseconds =
+      currentTimestamp - FIFTEEN_DAYS_IN_MILLISECONDS;
+  final DateTime fifteenDaysAgoInTimestamp =
+      DateTime.fromMillisecondsSinceEpoch(fifteenDaysAgoInMilliseconds);
+
+  return fifteenDaysAgoInTimestamp;
+}
+
+double? calculateWaterExpense(String? consunption) {
+  final double parsedConsunption = double.parse(consunption!);
+  const double PRICE_PER_LITER_OF_WATER = 5;
+  final double? consunptionExpense =
+      parsedConsunption * PRICE_PER_LITER_OF_WATER;
+  return consunptionExpense;
+}
