@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 class LoginModel extends FlutterFlowModel {
   ///  State fields for stateful widgets in this page.
 
+  final unfocusNode = FocusNode();
   final formKey = GlobalKey<FormState>();
   // Model for Input_Email component.
   late InputEmailModel inputEmailModel;
@@ -34,9 +35,12 @@ class LoginModel extends FlutterFlowModel {
   }
 
   void dispose() {
+    unfocusNode.dispose();
     inputEmailModel.dispose();
     inputPasswordModel.dispose();
   }
+
+  /// Action blocks are added here.
 
   /// Additional helper methods are added here.
 

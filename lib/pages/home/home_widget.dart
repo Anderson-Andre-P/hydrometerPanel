@@ -2,9 +2,12 @@ import '/backend/api_requests/api_calls.dart';
 import '/flutter_flow/flutter_flow_animations.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/flutter_flow_widgets.dart';
+import '/custom_code/actions/index.dart' as actions;
 import '/custom_code/widgets/index.dart' as custom_widgets;
 import '/flutter_flow/custom_functions.dart' as functions;
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -17,11 +20,10 @@ export 'home_model.dart';
 class HomeWidget extends StatefulWidget {
   const HomeWidget({
     Key? key,
-    String? aa,
-  })  : this.aa = aa ?? 'a',
-        super(key: key);
+    this.dateTimePicked,
+  }) : super(key: key);
 
-  final String aa;
+  final DateTime? dateTimePicked;
 
   @override
   _HomeWidgetState createState() => _HomeWidgetState();
@@ -31,7 +33,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
   late HomeModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  final _unfocusNode = FocusNode();
 
   final animationsMap = {
     'columnOnPageLoadAnimation': AnimationInfo(
@@ -58,11 +59,19 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
       FFAppState().update(() {
         FFAppState().apiLoaded = false;
       });
-      _model.getUserTokenIsEnable =
-          await HydrometerAPIEndpointsGroup.postRefreshTokenCall.call(
-        refreshToken: FFAppState().lsrefreshtoken,
-      );
-      if ((_model.getUserTokenIsEnable?.succeeded ?? true)) {
+      if (FFAppState().tokenIsPicked == true) {
+        _model.getUserTokenIsEnable =
+            await HydrometerAPIEndpointsGroup.postRefreshTokenCall.call(
+          refreshToken: FFAppState().lsrefreshtoken,
+        );
+        setState(() {
+          FFAppState().lstoken =
+              HydrometerAPIEndpointsGroup.postRefreshTokenCall
+                  .token(
+                    (_model.getUserTokenIsEnable?.jsonBody ?? ''),
+                  )
+                  .toString();
+        });
         _model.getCurrentUserResponse =
             await HydrometerAPIEndpointsGroup.getCurrentUserCall.call(
           token: FFAppState().lstoken,
@@ -88,65 +97,46 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
           );
           if ((_model.getCustomerDeviceInfoResponse?.succeeded ?? true)) {
             setState(() {
-              FFAppState().deviceId =
-                  HydrometerAPIEndpointsGroup.getCustomerDeviceInfoCall
+              FFAppState().deviceId = FFAppState().lscustomerid;
+              FFAppState().listOfDevices = (HydrometerAPIEndpointsGroup
+                      .getCustomerDeviceInfoCall
                       .entityTypeOfDeviceByCustomerId(
-                        (_model.getCustomerDeviceInfoResponse?.jsonBody ?? ''),
+                (_model.getCustomerDeviceInfoResponse?.jsonBody ?? ''),
+              ) as List)
+                  .map<String>((s) => s.toString())
+                  .toList()!
+                  .toList()
+                  .cast<String>();
+            });
+            _model.responseGetAttributes =
+                await HydrometerAPIEndpointsGroup.getAttributesCall.call(
+              token: FFAppState().lstoken,
+              keys: valueOrDefault<String>(
+                'tarifa',
+                'tarifa',
+              ),
+              entityType: 'DEVICE',
+              entityId: FFAppState().listOfDevices.first,
+            );
+            _model.getCustomerAssetInfos = await HydrometerAPIEndpointsGroup
+                .getCustomerAssetInfosCall
+                .call(
+              token: FFAppState().lstoken,
+              customerId: FFAppState().lscustomerid,
+            );
+            setState(() {
+              FFAppState().assetIdResponse =
+                  HydrometerAPIEndpointsGroup.getCustomerAssetInfosCall
+                      .assetId(
+                        (_model.getCustomerAssetInfos?.jsonBody ?? ''),
                       )
                       .toString();
-              FFAppState().startTs = functions
-                  .calculateTimestampFromFiftenDaysAgo()!
-                  .millisecondsSinceEpoch
-                  .toString();
-              FFAppState().endTs =
-                  functions.currentDay()!.millisecondsSinceEpoch.toString();
             });
-            _model.getTimeSeriesDataResponse =
-                await HydrometerAPIEndpointsGroup.getTimeSeriesDataCall.call(
-              entityId: FFAppState().deviceId,
-              token: FFAppState().lstoken,
-              startTs: FFAppState().startTs,
-              endTs: FFAppState().endTs,
-              keys: 'hidrometro',
-            );
-            if ((_model.getTimeSeriesDataResponse?.succeeded ?? true)) {
-              setState(() {
-                FFAppState().lastValueHydrometer = (HydrometerAPIEndpointsGroup
-                        .getTimeSeriesDataCall
-                        .hidrometroValues(
-                  (_model.getTimeSeriesDataResponse?.jsonBody ?? ''),
-                ) as List)
-                    .map<String>((s) => s.toString())
-                    .toList()
-                    .first;
-              });
-              FFAppState().update(() {
-                FFAppState().apiLoaded = true;
-              });
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Erro ao obter os dados das últimas leituras de seu dispositvo, contate o suporte.',
-                    style: FlutterFlowTheme.of(context).labelLarge.override(
-                          fontFamily: 'Poppins',
-                          color: FlutterFlowTheme.of(context).tipografiaTitulo,
-                        ),
-                  ),
-                  duration: Duration(milliseconds: 4000),
-                  backgroundColor: FlutterFlowTheme.of(context).background2,
-                  action: SnackBarAction(
-                    label: 'Ok',
-                    textColor: FlutterFlowTheme.of(context).primary,
-                    onPressed: () async {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    },
-                  ),
-                ),
-              );
-              return;
-            }
-
+            setState(() {
+              FFAppState().apiLoaded = true;
+              FFAppState().consunptionFromNow =
+                  functions.calculateTimestampFromNow()!;
+            });
             return;
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -236,7 +226,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
   void dispose() {
     _model.dispose();
 
-    _unfocusNode.dispose();
     super.dispose();
   }
 
@@ -245,13 +234,14 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
     context.watch<FFAppState>();
 
     return GestureDetector(
-      onTap: () => FocusScope.of(context).requestFocus(_unfocusNode),
+      onTap: () => FocusScope.of(context).requestFocus(_model.unfocusNode),
       child: WillPopScope(
         onWillPop: () async => false,
         child: Scaffold(
           key: scaffoldKey,
           backgroundColor: FlutterFlowTheme.of(context).background2,
           body: SafeArea(
+            top: true,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -264,11 +254,11 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            width: MediaQuery.of(context).size.width * 1.0,
-                            height: MediaQuery.of(context).size.height * 1.0,
+                            width: MediaQuery.sizeOf(context).width * 1.0,
+                            height: MediaQuery.sizeOf(context).height * 1.0,
                             child: custom_widgets.ShimmerEffectOne(
-                              width: MediaQuery.of(context).size.width * 1.0,
-                              height: MediaQuery.of(context).size.height * 1.0,
+                              width: MediaQuery.sizeOf(context).width * 1.0,
+                              height: MediaQuery.sizeOf(context).height * 1.0,
                               baseColor: FlutterFlowTheme.of(context).outline,
                               highlightColor:
                                   FlutterFlowTheme.of(context).icones,
@@ -284,6 +274,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                     child: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
                             padding: EdgeInsetsDirectional.fromSTEB(
@@ -331,10 +322,13 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                         CrossAxisAlignment.start,
                                     children: [
                                       AutoSizeText(
-                                        FFAppState().lsname.maybeHandleOverflow(
-                                              maxChars: 20,
-                                              replacement: '…',
-                                            ),
+                                        valueOrDefault<String>(
+                                          FFAppState().lsname,
+                                          'Default',
+                                        ).maybeHandleOverflow(
+                                          maxChars: 20,
+                                          replacement: '…',
+                                        ),
                                         style: FlutterFlowTheme.of(context)
                                             .headlineSmall
                                             .override(
@@ -348,7 +342,10 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                         padding: EdgeInsetsDirectional.fromSTEB(
                                             0.0, 4.0, 0.0, 0.0),
                                         child: AutoSizeText(
-                                          FFAppState().email,
+                                          valueOrDefault<String>(
+                                            FFAppState().email,
+                                            'Default',
+                                          ),
                                           style: FlutterFlowTheme.of(context)
                                               .bodyMedium,
                                         ),
@@ -359,171 +356,473 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                          Container(
-                            height: 400.0,
-                            decoration: BoxDecoration(),
-                            child: Align(
-                              alignment: AlignmentDirectional(0.0, 0.0),
-                              child: DefaultTabController(
-                                length: 3,
-                                initialIndex: 0,
-                                child: Column(
-                                  children: [
-                                    Align(
-                                      alignment: Alignment(0.0, 0),
-                                      child: TabBar(
-                                        labelColor: FlutterFlowTheme.of(context)
+                          Padding(
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                                0.0, 16.0, 0.0, 16.0),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.max,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        16.0, 0.0, 8.0, 0.0),
+                                    child: FFButtonWidget(
+                                      onPressed: () async {
+                                        _model.responseOfFunctionLatestValueOne =
+                                            await actions
+                                                .sumConsunptionsByAsset(
+                                          FFAppState().assetIdResponse,
+                                          functions
+                                              .getFirstDateTimestamp('day'),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          FFAppState().lstoken,
+                                        );
+                                        _model.responseOfFunctionLatestValueTwo =
+                                            await actions
+                                                .sumConsunptionsByAsset(
+                                          FFAppState().assetIdResponse,
+                                          functions.twentyMinutesAgo(),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          FFAppState().lstoken,
+                                        );
+                                        setState(() {
+                                          FFAppState()
+                                                  .responseAPILatestValueOne =
+                                              _model
+                                                  .responseOfFunctionLatestValueOne!;
+                                          FFAppState()
+                                                  .responseAPILatestValueTwo =
+                                              _model
+                                                  .responseOfFunctionLatestValueTwo!;
+                                        });
+
+                                        setState(() {});
+                                      },
+                                      text: 'Dia',
+                                      options: FFButtonOptions(
+                                        height: 40.0,
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            24.0, 0.0, 24.0, 0.0),
+                                        iconPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                0.0, 0.0, 0.0, 0.0),
+                                        color: FlutterFlowTheme.of(context)
+                                            .background,
+                                        textStyle: FlutterFlowTheme.of(context)
+                                            .titleSmall
+                                            .override(
+                                              fontFamily: 'Poppins',
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .tipografiaTitulo,
+                                            ),
+                                        elevation: 1.0,
+                                        borderSide: BorderSide(
+                                          color: FlutterFlowTheme.of(context)
+                                              .primary,
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      showLoadingIndicator: false,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        0.0, 0.0, 8.0, 0.0),
+                                    child: FFButtonWidget(
+                                      onPressed: () async {
+                                        _model.responseOfFunctionLatestValueThree =
+                                            await actions
+                                                .sumConsunptionsByAsset(
+                                          FFAppState().assetIdResponse,
+                                          functions
+                                              .getFirstDateTimestamp('week'),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          FFAppState().lstoken,
+                                        );
+                                        _model.responseOfFunctionLatestValueFour =
+                                            await actions
+                                                .sumConsunptionsByAsset(
+                                          FFAppState().assetIdResponse,
+                                          functions.twentyMinutesAgo(),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          FFAppState().lstoken,
+                                        );
+                                        setState(() {
+                                          FFAppState()
+                                                  .responseAPILatestValueOne =
+                                              _model
+                                                  .responseOfFunctionLatestValueThree!;
+                                          FFAppState()
+                                                  .responseAPILatestValueTwo =
+                                              _model
+                                                  .responseOfFunctionLatestValueFour!;
+                                        });
+
+                                        setState(() {});
+                                      },
+                                      text: 'Semana',
+                                      options: FFButtonOptions(
+                                        height: 40.0,
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            24.0, 0.0, 24.0, 0.0),
+                                        iconPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                0.0, 0.0, 0.0, 0.0),
+                                        color: FlutterFlowTheme.of(context)
+                                            .background,
+                                        textStyle: FlutterFlowTheme.of(context)
+                                            .titleSmall
+                                            .override(
+                                              fontFamily: 'Poppins',
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .tipografiaTitulo,
+                                            ),
+                                        elevation: 1.0,
+                                        borderSide: BorderSide(
+                                          color: FlutterFlowTheme.of(context)
+                                              .primary,
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      showLoadingIndicator: false,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        0.0, 0.0, 8.0, 0.0),
+                                    child: FFButtonWidget(
+                                      onPressed: () async {
+                                        _model.responseOfFunctionLatestValueFive =
+                                            await actions
+                                                .sumConsunptionsByAsset(
+                                          FFAppState().assetIdResponse,
+                                          functions
+                                              .getFirstDateTimestamp('month'),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          FFAppState().lstoken,
+                                        );
+                                        _model.responseOfFunctionLatestValueSix =
+                                            await actions
+                                                .sumConsunptionsByAsset(
+                                          FFAppState().assetIdResponse,
+                                          functions.twentyMinutesAgo(),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          FFAppState().lstoken,
+                                        );
+                                        setState(() {
+                                          FFAppState()
+                                                  .responseAPILatestValueOne =
+                                              _model
+                                                  .responseOfFunctionLatestValueFive!;
+                                          FFAppState()
+                                                  .responseAPILatestValueTwo =
+                                              _model
+                                                  .responseOfFunctionLatestValueSix!;
+                                        });
+
+                                        setState(() {});
+                                      },
+                                      text: 'Mês',
+                                      options: FFButtonOptions(
+                                        height: 40.0,
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            24.0, 0.0, 24.0, 0.0),
+                                        iconPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                0.0, 0.0, 0.0, 0.0),
+                                        color: FlutterFlowTheme.of(context)
+                                            .background,
+                                        textStyle: FlutterFlowTheme.of(context)
+                                            .titleSmall
+                                            .override(
+                                              fontFamily: 'Poppins',
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .tipografiaTitulo,
+                                            ),
+                                        elevation: 1.0,
+                                        borderSide: BorderSide(
+                                          color: FlutterFlowTheme.of(context)
+                                              .primary,
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      showLoadingIndicator: false,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        0.0, 0.0, 16.0, 0.0),
+                                    child: FFButtonWidget(
+                                      onPressed: () async {
+                                        final _datePickedDate =
+                                            await showDatePicker(
+                                          context: context,
+                                          initialDate: getCurrentTimestamp,
+                                          firstDate: DateTime(1900),
+                                          lastDate: getCurrentTimestamp,
+                                        );
+
+                                        TimeOfDay? _datePickedTime;
+                                        if (_datePickedDate != null) {
+                                          _datePickedTime =
+                                              await showTimePicker(
+                                            context: context,
+                                            initialTime: TimeOfDay.fromDateTime(
+                                                getCurrentTimestamp),
+                                          );
+                                        }
+
+                                        if (_datePickedDate != null &&
+                                            _datePickedTime != null) {
+                                          setState(() {
+                                            _model.datePicked = DateTime(
+                                              _datePickedDate.year,
+                                              _datePickedDate.month,
+                                              _datePickedDate.day,
+                                              _datePickedTime!.hour,
+                                              _datePickedTime.minute,
+                                            );
+                                          });
+                                        }
+                                        _model.responseOfFunctionLatestValueSeven =
+                                            await actions.sumConsunptions(
+                                          FFAppState().listOfDevices.toList(),
+                                          _model.datePicked!
+                                              .millisecondsSinceEpoch
+                                              .toString(),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          'hidrometro',
+                                          FFAppState().lstoken,
+                                        );
+                                        _model.responseOfFunctionLatestValueEigth =
+                                            await actions.sumConsunptions(
+                                          FFAppState().listOfDevices.toList(),
+                                          valueOrDefault<String>(
+                                            functions.twentyMinutesAgo(),
+                                            '0',
+                                          ),
+                                          functions
+                                              .calculateTimestampFromNow()!,
+                                          'hidrometro',
+                                          FFAppState().lstoken,
+                                        );
+                                        setState(() {
+                                          FFAppState()
+                                                  .responseAPILatestValueOne =
+                                              _model
+                                                  .responseOfFunctionLatestValueSeven!;
+                                          FFAppState()
+                                                  .responseAPILatestValueTwo =
+                                              _model
+                                                  .responseOfFunctionLatestValueEigth!;
+                                        });
+
+                                        setState(() {});
+                                      },
+                                      text: 'Personalizado',
+                                      options: FFButtonOptions(
+                                        height: 40.0,
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            24.0, 0.0, 24.0, 0.0),
+                                        iconPadding:
+                                            EdgeInsetsDirectional.fromSTEB(
+                                                0.0, 0.0, 0.0, 0.0),
+                                        color: FlutterFlowTheme.of(context)
+                                            .background,
+                                        textStyle: FlutterFlowTheme.of(context)
+                                            .titleSmall
+                                            .override(
+                                              fontFamily: 'Poppins',
+                                              color:
+                                                  FlutterFlowTheme.of(context)
+                                                      .tipografiaTitulo,
+                                            ),
+                                        elevation: 1.0,
+                                        borderSide: BorderSide(
+                                          color: FlutterFlowTheme.of(context)
+                                              .primary,
+                                          width: 1.0,
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                      ),
+                                      showLoadingIndicator: false,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: AlignmentDirectional(0.0, 0.0),
+                            child: FutureBuilder<ApiCallResponse>(
+                              future: HydrometerAPIEndpointsGroup
+                                  .getCustomerAssetInfosCall
+                                  .call(
+                                customerId: FFAppState().lscustomerid,
+                                token: FFAppState().lstoken,
+                              ),
+                              builder: (context, snapshot) {
+                                // Customize what your widget looks like when it's loading.
+                                if (!snapshot.hasData) {
+                                  return Center(
+                                    child: SizedBox(
+                                      width: 50.0,
+                                      height: 50.0,
+                                      child: CircularProgressIndicator(
+                                        color: FlutterFlowTheme.of(context)
                                             .primary,
-                                        unselectedLabelColor:
-                                            FlutterFlowTheme.of(context)
-                                                .tipografiaCorpo,
-                                        labelStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium,
-                                        indicatorColor:
-                                            FlutterFlowTheme.of(context)
-                                                .secondary,
-                                        tabs: [
-                                          Tab(
-                                            text: 'Diário',
-                                          ),
-                                          Tab(
-                                            text: 'Semanal',
-                                          ),
-                                          Tab(
-                                            text: 'Mensal',
-                                          ),
-                                        ],
                                       ),
                                     ),
-                                    Expanded(
-                                      child: TabBarView(
+                                  );
+                                }
+                                final stackGetCustomerAssetInfosResponse =
+                                    snapshot.data!;
+                                return Container(
+                                  width: 296.0,
+                                  height: 296.0,
+                                  child: Stack(
+                                    alignment: AlignmentDirectional(0.0, 0.0),
+                                    children: [
+                                      Container(
+                                        width: 296.0,
+                                        height: 296.0,
+                                        decoration: BoxDecoration(
+                                          color: FlutterFlowTheme.of(context)
+                                              .background,
+                                          borderRadius:
+                                              BorderRadius.circular(148.0),
+                                        ),
+                                      ),
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          Container(
-                                            width: 296.0,
-                                            height: 100.0,
-                                            child: Stack(
-                                              alignment: AlignmentDirectional(
-                                                  0.0, 0.0),
-                                              children: [
-                                                Container(
-                                                  width: 296.0,
-                                                  height: 296.0,
-                                                  decoration: BoxDecoration(
-                                                    color: FlutterFlowTheme.of(
-                                                            context)
-                                                        .background,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            148.0),
-                                                  ),
-                                                ),
-                                                Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    Text(
-                                                      'Condomínio',
-                                                      style:
+                                          Text(
+                                            'Condomínio',
+                                            style: FlutterFlowTheme.of(context)
+                                                .titleLarge,
+                                          ),
+                                          Align(
+                                            alignment:
+                                                AlignmentDirectional(0.0, 0.0),
+                                            child: SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsetsDirectional
+                                                            .fromSTEB(0.0, 0.0,
+                                                                8.0, 0.0),
+                                                    child: FaIcon(
+                                                      FontAwesomeIcons.drupal,
+                                                      color:
                                                           FlutterFlowTheme.of(
                                                                   context)
-                                                              .titleLarge,
+                                                              .info,
+                                                      size: 36.0,
                                                     ),
-                                                    Align(
-                                                      alignment:
-                                                          AlignmentDirectional(
-                                                              0.0, 0.0),
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                EdgeInsetsDirectional
-                                                                    .fromSTEB(
-                                                                        0.0,
-                                                                        0.0,
-                                                                        8.0,
-                                                                        0.0),
-                                                            child: FaIcon(
-                                                              FontAwesomeIcons
-                                                                  .drupal,
-                                                              color: FlutterFlowTheme
-                                                                      .of(context)
-                                                                  .info,
-                                                              size: 36.0,
+                                                  ),
+                                                  Text(
+                                                    valueOrDefault<String>(
+                                                      formatNumber(
+                                                        valueOrDefault<double>(
+                                                              FFAppState()
+                                                                  .responseAPILatestValueTwo,
+                                                              0.0,
+                                                            ) -
+                                                            valueOrDefault<
+                                                                double>(
+                                                              FFAppState()
+                                                                  .responseAPILatestValueOne,
+                                                              0.0,
                                                             ),
-                                                          ),
-                                                          Text(
-                                                            '${(HydrometerAPIEndpointsGroup.getTimeSeriesDataCall.hidrometroLastValue(
-                                                              (_model.getTimeSeriesDataResponse
-                                                                      ?.jsonBody ??
-                                                                  ''),
-                                                            ) as List).map<String>((s) => s.toString()).toList().first}m³',
-                                                            style: FlutterFlowTheme
-                                                                    .of(context)
-                                                                .displaySmall,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      'R\$${formatNumber(
-                                                        functions.calculateWaterExpense(
-                                                            (HydrometerAPIEndpointsGroup
-                                                                    .getTimeSeriesDataCall
-                                                                    .hidrometroLastValue(
-                                                          (_model.getTimeSeriesDataResponse
-                                                                  ?.jsonBody ??
-                                                              ''),
-                                                        ) as List)
-                                                                .map<String>((s) =>
-                                                                    s.toString())
-                                                                .toList()
-                                                                .first),
                                                         formatType:
                                                             FormatType.decimal,
                                                         decimalType: DecimalType
                                                             .commaDecimal,
-                                                      )}',
-                                                      style:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .headlineLarge,
+                                                      ),
+                                                      '00000000',
                                                     ),
-                                                  ],
-                                                ),
-                                              ],
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .displaySmall,
+                                                  ),
+                                                  Text(
+                                                    'm³',
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .displaySmall,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                           Text(
-                                            'Tab View 2',
+                                            valueOrDefault<String>(
+                                              formatNumber(
+                                                functions.calculateWaterExpense(
+                                                    valueOrDefault<double>(
+                                                          FFAppState()
+                                                              .responseAPILatestValueTwo,
+                                                          0.0,
+                                                        ) -
+                                                        valueOrDefault<double>(
+                                                          FFAppState()
+                                                              .responseAPILatestValueOne,
+                                                          0.0,
+                                                        ),
+                                                    (HydrometerAPIEndpointsGroup
+                                                            .getAttributesCall
+                                                            .valorTarifa(
+                                                      (_model.responseGetAttributes
+                                                              ?.jsonBody ??
+                                                          ''),
+                                                    ) as List)
+                                                        .map<String>(
+                                                            (s) => s.toString())
+                                                        .toList()
+                                                        .first
+                                                        .toString()),
+                                                formatType: FormatType.decimal,
+                                                decimalType:
+                                                    DecimalType.commaDecimal,
+                                                currency: 'R\$',
+                                              ),
+                                              '000000',
+                                            ),
                                             style: FlutterFlowTheme.of(context)
-                                                .bodyMedium
-                                                .override(
-                                                  fontFamily: 'Roboto',
-                                                  fontSize: 32.0,
-                                                ),
-                                          ),
-                                          Text(
-                                            'Tab View 3',
-                                            style: FlutterFlowTheme.of(context)
-                                                .bodyMedium
-                                                .override(
-                                                  fontFamily: 'Roboto',
-                                                  fontSize: 32.0,
-                                                ),
+                                                .headlineLarge,
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],

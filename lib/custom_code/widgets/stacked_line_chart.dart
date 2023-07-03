@@ -2,6 +2,7 @@
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'index.dart'; // Imports other custom widgets
+import '/custom_code/actions/index.dart'; // Imports custom actions
 import '/flutter_flow/custom_functions.dart'; // Imports custom functions
 import 'package:flutter/material.dart';
 // Begin custom widget code
@@ -50,7 +51,7 @@ class _StackedLineChartState extends State<StackedLineChart> {
   @override
   Widget build(BuildContext context) {
     RangeController rangeController = RangeController(
-      start: calculateTimestampFromFiftenDaysAgo(),
+      start: DateTime.parse(calculateMilliseconds(15)),
       end: currentDay(),
     );
 
@@ -60,7 +61,7 @@ class _StackedLineChartState extends State<StackedLineChart> {
         primaryXAxis: DateTimeAxis(
           autoScrollingMode: AutoScrollingMode.start,
           autoScrollingDeltaType: DateTimeIntervalType.days,
-          visibleMinimum: calculateTimestampFromFiftenDaysAgo(),
+          visibleMinimum: DateTime.parse(calculateMilliseconds(15)),
           visibleMaximum: rangeController.end,
           minimum: firstConsumptionMeasurement(),
           maximum: currentDay(),
